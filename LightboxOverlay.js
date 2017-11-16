@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Children, cloneElement } from 'react';
 import PropTypes from 'prop-types';
 import { Animated, Dimensions, Modal, PanResponder, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -134,6 +134,7 @@ export default class LightboxOverlay extends Component {
     this.state.pan.setValue(0);
     this.setState({
       isAnimating: true,
+      isOpening: true,
       target: {
         x: 0,
         y: 0,
@@ -145,7 +146,10 @@ export default class LightboxOverlay extends Component {
       this.state.openVal,
       { toValue: 1, ...this.props.springConfig }
     ).start(() => {
-      this.setState({ isAnimating: false });
+      this.setState({
+        isAnimating: false,
+        isOpening: false
+      });
       this.props.didOpen();
     });
   }
@@ -157,6 +161,7 @@ export default class LightboxOverlay extends Component {
     }
     this.setState({
       isAnimating: true,
+      isClosing: true,
     });
     Animated.spring(
       this.state.openVal,
@@ -164,6 +169,7 @@ export default class LightboxOverlay extends Component {
     ).start(() => {
       this.setState({
         isAnimating: false,
+        isClosing: false,
       });
       this.props.onClose();
     });
@@ -173,6 +179,19 @@ export default class LightboxOverlay extends Component {
     if(this.props.isOpen != props.isOpen && props.isOpen) {
       this.open();
     }
+  }
+
+  getContent() {
+    if (this.state.isOpening && this.props.openingProps) {
+      return cloneElement(Children.only(this.props.children), this.props.openingProps)
+    }
+    else if (this.state.isClosing && this.props.closingProps) {
+      return cloneElement(Children.only(this.props.children), this.props.closingProps)
+    }
+    else if (this.props.activeProps) {
+      return cloneElement(Children.only(this.props.children), this.props.activeProps)
+    }
+    return this.props.children
   }
 
   render() {
@@ -226,7 +245,7 @@ export default class LightboxOverlay extends Component {
     )}</Animated.View>);
     const content = (
       <Animated.View style={[openStyle, dragStyle]} {...handlers}>
-        {this.props.children}
+        {this.getContent()}
       </Animated.View>
     );
 
